@@ -1,3 +1,4 @@
+import { Writable } from "stream";
 import { Packet, PacketTypeDefault } from "./Packet";
 import { TcpAdapter } from "./TcpAdapter";
 

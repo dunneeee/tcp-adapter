@@ -12,7 +12,7 @@ export type PacketType = PacketTypeDefault | number;
 export type PacketSerializable<T> = {
   type: PacketType;
   data: T;
-  id: number;
+  id: number | string;
 };
 
 export function isPacketSerializable<T>(
@@ -26,13 +26,17 @@ export function isPacketSerializable<T>(
 export class Packet<T = any> implements Convertible<PacketSerializable<T>> {
   type: PacketType;
   data: T;
-  id: number;
+  id: number | string;
 
-  constructor(data: T, type: PacketType, id: number);
+  constructor(data: T, type: PacketType, id: number | string);
   constructor(data: T, type: PacketType);
-  constructor(id: number, data: T);
+  constructor(id: number | string, data: T);
   constructor(data: T);
-  constructor(dataOrId: T | number, typeOrData?: PacketType, id?: number) {
+  constructor(
+    dataOrId: T | number,
+    typeOrData?: PacketType,
+    id?: number | string
+  ) {
     if (typeof dataOrId === "number") {
       this.id = dataOrId;
       this.data = typeOrData as T;
