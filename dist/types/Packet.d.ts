@@ -9,16 +9,16 @@ export type PacketType = PacketTypeDefault | number;
 export type PacketSerializable<T> = {
     type: PacketType;
     data: T;
-    id: number;
+    id: number | string;
 };
 export declare function isPacketSerializable<T>(obj: any): obj is PacketSerializable<T>;
 export declare class Packet<T = any> implements Convertible<PacketSerializable<T>> {
     type: PacketType;
     data: T;
-    id: number;
-    constructor(data: T, type: PacketType, id: number);
+    id: string;
+    constructor(data: T, type: PacketType, id: string);
     constructor(data: T, type: PacketType);
-    constructor(id: number, data: T);
+    constructor(id: string, data: T);
     constructor(data: T);
     toBuffer(): Buffer;
     toPlainObject(): PacketSerializable<T>;

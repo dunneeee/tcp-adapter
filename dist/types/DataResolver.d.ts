@@ -9,14 +9,13 @@ export interface DataResolverConfig {
 export declare class DataResolver {
     private pendingHandlers;
     private config;
-    private countId;
     constructor(config?: Partial<DataResolverConfig>);
-    register(resolve: Function, reject: Function, id: number): void;
-    register(resolve: Function, reject: Function): number;
-    resolve<T>(id: number, data: T): void;
-    reject(id: number, error: Error): void;
+    register(resolve: Function, reject: Function, id: string): void;
+    register(resolve: Function, reject: Function): string;
+    resolve<T>(id: string, data: T): void;
+    reject(id: string, error: Error): void;
     clear(): void;
     clearQuietly(): void;
-    getPendingHandlers(): Map<number, PendingHandler>;
-    getPendingHandler(id: number): PendingHandler | undefined;
+    getPendingHandlers(): Map<string, PendingHandler>;
+    getPendingHandler(id: string): PendingHandler | undefined;
 }

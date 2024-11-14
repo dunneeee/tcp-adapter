@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PacketProcess = void 0;
+const constants_1 = require("./constants");
 const Packet_1 = require("./Packet");
 class PacketProcess {
     constructor(adapter) {
@@ -13,7 +14,7 @@ class PacketProcess {
         });
     }
     handle(packet) {
-        if (packet.id === -1)
+        if (packet.id === constants_1.NON_ID)
             return this.handleSpecialPacket(packet);
         return this.handleNormalPacket(packet);
     }

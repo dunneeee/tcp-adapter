@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Packet = exports.PacketTypeDefault = void 0;
 exports.isPacketSerializable = isPacketSerializable;
+const constants_1 = require("./constants");
 const PacketOutput_1 = require("./PacketOutput");
 var PacketTypeDefault;
 (function (PacketTypeDefault) {
@@ -13,7 +14,7 @@ function isPacketSerializable(obj) {
 }
 class Packet {
     constructor(dataOrId, typeOrData, id) {
-        if (typeof dataOrId === "number") {
+        if (typeof dataOrId === "string") {
             this.id = dataOrId;
             this.data = typeOrData;
             this.type = PacketTypeDefault.Data;
@@ -21,12 +22,12 @@ class Packet {
         else if (arguments.length === 1) {
             this.data = dataOrId;
             this.type = PacketTypeDefault.Data;
-            this.id = -1;
+            this.id = constants_1.NON_ID;
         }
         else if (arguments.length === 2 && typeof typeOrData === "number") {
             this.data = dataOrId;
             this.type = typeOrData;
-            this.id = -1;
+            this.id = constants_1.NON_ID;
         }
         else {
             this.data = dataOrId;
