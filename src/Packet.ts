@@ -1,3 +1,4 @@
+import { NON_ID } from "./constants";
 import { Convertible } from "./Convertible";
 import { PacketOutput } from "./PacketOutput";
 import { TcpAdapter } from "./TcpAdapter";
@@ -26,33 +27,29 @@ export function isPacketSerializable<T>(
 export class Packet<T = any> implements Convertible<PacketSerializable<T>> {
   type: PacketType;
   data: T;
-  id: number | string;
+  id: string;
 
-  constructor(data: T, type: PacketType, id: number | string);
+  constructor(data: T, type: PacketType, id: string);
   constructor(data: T, type: PacketType);
-  constructor(id: number | string, data: T);
+  constructor(id: string, data: T);
   constructor(data: T);
-  constructor(
-    dataOrId: T | number,
-    typeOrData?: PacketType,
-    id?: number | string
-  ) {
-    if (typeof dataOrId === "number") {
+  constructor(dataOrId: T | string, typeOrData?: PacketType, id?: string) {
+    if (typeof dataOrId === "string") {
       this.id = dataOrId;
       this.data = typeOrData as T;
       this.type = PacketTypeDefault.Data;
     } else if (arguments.length === 1) {
       this.data = dataOrId as T;
       this.type = PacketTypeDefault.Data;
-      this.id = -1;
+      this.id = NON_ID;
     } else if (arguments.length === 2 && typeof typeOrData === "number") {
       this.data = dataOrId as T;
       this.type = typeOrData;
-      this.id = -1;
+      this.id = NON_ID;
     } else {
       this.data = dataOrId as T;
       this.type = typeOrData as PacketType;
-      this.id = id as number;
+      this.id = id as string;
     }
   }
 

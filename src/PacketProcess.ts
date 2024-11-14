@@ -1,3 +1,4 @@
+import { NON_ID } from "./constants";
 import { Packet, PacketTypeDefault } from "./Packet";
 import { TcpAdapter } from "./TcpAdapter";
 
@@ -12,7 +13,7 @@ export class PacketProcess {
   }
 
   protected handle(packet: Packet) {
-    if (packet.id === -1) return this.handleSpecialPacket(packet);
+    if (packet.id === NON_ID) return this.handleSpecialPacket(packet);
     return this.handleNormalPacket(packet);
   }
 

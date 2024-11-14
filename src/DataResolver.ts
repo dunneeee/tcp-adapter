@@ -1,3 +1,5 @@
+import { randomUUID } from "crypto";
+
 export interface PendingHandler {
   resolve: Function;
   reject: Function;
@@ -9,9 +11,8 @@ export interface DataResolverConfig {
 }
 
 export class DataResolver {
-  private pendingHandlers: Map<number | string, PendingHandler> = new Map();
+  private pendingHandlers: Map<string, PendingHandler> = new Map();
   private config: DataResolverConfig;
-  private countId = 1;
   constructor(config: Partial<DataResolverConfig> = {}) {
     this.config = {
       timeout: 60000,
@@ -19,18 +20,14 @@ export class DataResolver {
     };
   }
 
+  public register(resolve: Function, reject: Function, id: string): void;
+  public register(resolve: Function, reject: Function): string;
   public register(
     resolve: Function,
     reject: Function,
-    id: number | string
-  ): void;
-  public register(resolve: Function, reject: Function): number;
-  public register(
-    resolve: Function,
-    reject: Function,
-    id?: number | string
-  ): number | string | void {
-    id = id || this.countId++;
+    id?: string
+  ): string | void {
+    id = id || randomUUID();
 
     const timeout = setTimeout(() => {
       this.reject(id!, new Error("TIMEOUT"));
@@ -45,7 +42,7 @@ export class DataResolver {
     return id;
   }
 
-  public resolve<T>(id: number | string, data: T): void {
+  public resolve<T>(id: string, data: T): void {
     const handler = this.pendingHandlers.get(id);
     if (handler) {
       clearTimeout(handler.timeout);
@@ -54,7 +51,7 @@ export class DataResolver {
     }
   }
 
-  public reject(id: number | string, error: Error): void {
+  public reject(id: string, error: Error): void {
     const handler = this.pendingHandlers.get(id);
     if (handler) {
       clearTimeout(handler.timeout);
@@ -78,11 +75,11 @@ export class DataResolver {
     this.pendingHandlers.clear();
   }
 
-  public getPendingHandlers(): Map<number | string, PendingHandler> {
+  public getPendingHandlers(): Map<string, PendingHandler> {
     return this.pendingHandlers;
   }
 
-  public getPendingHandler(id: number | string): PendingHandler | undefined {
+  public getPendingHandler(id: string): PendingHandler | undefined {
     return this.pendingHandlers.get(id);
   }
 }
