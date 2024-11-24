@@ -1,6 +1,7 @@
 import { Writable } from "stream";
 import { Packet, PacketTypeDefault } from "./Packet";
 import { TcpAdapter } from "./TcpAdapter";
+import { FileCallbackParams } from "./types";
 
 export class TcpOutput {
   constructor(private adapter: TcpAdapter) {}
@@ -44,5 +45,32 @@ export class TcpOutput {
       packet.id = id;
       this.send(packet, false).catch(reject);
     });
+  }
+
+  stream(
+    id: string,
+    onWriteCallback: (params: FileCallbackParams) => void
+  ): Writable {
+    const output = this;
+    const stream = new Writable({
+      write(chunk, _, callback) {
+        const packet = new Packet(chunk, PacketTypeDefault.File, id);
+        onWriteCallback({ chunk, length: chunk.length });
+        output
+          .send(packet, false)
+          .then(() => callback())
+          .catch(callback);
+      },
+
+      final(callback) {
+        const packet = new Packet(null, PacketTypeDefault.File, id);
+        output
+          .send(packet, false)
+          .then(() => callback())
+          .catch(callback);
+      },
+    });
+
+    return stream;
   }
 }

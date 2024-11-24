@@ -2,10 +2,12 @@ import { NON_ID } from "./constants";
 import { Convertible } from "./Convertible";
 import { PacketOutput } from "./PacketOutput";
 import { TcpAdapter } from "./TcpAdapter";
+import { isUUID } from "./utils";
 
 export enum PacketTypeDefault {
   Error = 0,
   Data = 1,
+  File = 416,
 }
 
 export type PacketType = PacketTypeDefault | number;
@@ -34,18 +36,20 @@ export class Packet<T = any> implements Convertible<PacketSerializable<T>> {
   constructor(id: string, data: T);
   constructor(data: T);
   constructor(dataOrId: T | string, typeOrData?: PacketType, id?: string) {
-    if (typeof dataOrId === "string") {
-      this.id = dataOrId;
-      this.data = typeOrData as T;
-      this.type = PacketTypeDefault.Data;
-    } else if (arguments.length === 1) {
+    if (arguments.length === 1) {
       this.data = dataOrId as T;
       this.type = PacketTypeDefault.Data;
       this.id = NON_ID;
-    } else if (arguments.length === 2 && typeof typeOrData === "number") {
-      this.data = dataOrId as T;
-      this.type = typeOrData;
-      this.id = NON_ID;
+    } else if (arguments.length === 2) {
+      if (isUUID(String(dataOrId))) {
+        this.data = typeOrData as T;
+        this.type = PacketTypeDefault.Data;
+        this.id = dataOrId as string;
+      } else {
+        this.data = dataOrId as T;
+        this.type = typeOrData as PacketType;
+        this.id = NON_ID;
+      }
     } else {
       this.data = dataOrId as T;
       this.type = typeOrData as PacketType;
