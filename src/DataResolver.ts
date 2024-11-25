@@ -42,6 +42,42 @@ export class DataResolver {
     return id;
   }
 
+  public registerWithTimeout(
+    resolve: Function,
+    reject: Function,
+    timeout: number | null
+  ): string;
+  public registerWithTimeout(
+    resolve: Function,
+    reject: Function,
+    timeout: number | null,
+    id: string
+  ): void;
+  public registerWithTimeout(
+    resolve: Function,
+    reject: Function,
+    timeout: number | null = this.config.timeout,
+    id?: string
+  ): string | void {
+    id = id || randomUUID();
+
+    let timeoutId: NodeJS.Timeout = {} as NodeJS.Timeout;
+
+    if (timeout) {
+      timeoutId = setTimeout(() => {
+        this.reject(id!, new Error("TIMEOUT"));
+      }, timeout || this.config.timeout);
+    }
+
+    this.pendingHandlers.set(id!, {
+      resolve,
+      reject,
+      timeout: timeoutId,
+    });
+
+    return id;
+  }
+
   public resolve<T>(id: string, data: T): void {
     const handler = this.pendingHandlers.get(id);
     if (handler) {

@@ -12,7 +12,7 @@ export class PacketOutput extends TcpOutput {
     silent = false,
     type: number = this.packet.type
   ): Promise<Packet<R>> {
-    const packet = new Packet(data, type, this.packet.id);
+    const packet = new Packet(data, type, this.packet.id).markAsFeedBack();
     return this.send(packet, silent).then(() => packet);
   }
 

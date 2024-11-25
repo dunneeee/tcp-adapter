@@ -30,6 +30,7 @@ export class Packet<T = any> implements Convertible<PacketSerializable<T>> {
   type: PacketType;
   data: T;
   id: string;
+  isFeedback: boolean = false;
 
   constructor(data: T, type: PacketType, id: string);
   constructor(data: T, type: PacketType);
@@ -76,5 +77,20 @@ export class Packet<T = any> implements Convertible<PacketSerializable<T>> {
 
   newOutput(adapter: TcpAdapter) {
     return new PacketOutput(this, adapter);
+  }
+
+  markAsFeedBack() {
+    this.isFeedback = true;
+    return this;
+  }
+
+  unMarkAsFeedBack() {
+    this.isFeedback = false;
+    return this;
+  }
+
+  setFeedback(value: boolean) {
+    this.isFeedback = value;
+    return this;
   }
 }

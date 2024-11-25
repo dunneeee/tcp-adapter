@@ -29,7 +29,7 @@ export class TcpOutput {
     });
   }
 
-  async request<R = any, T = any>(data: T, type: number): Promise<R>;
+  async request<R = any, T = any>(data: T, type?: number): Promise<R>;
   async request<R = any, T = any>(packet: Packet<T>): Promise<R>;
   async request<R = any, T = any>(
     packetOrData: Packet<T> | T,
@@ -42,6 +42,34 @@ export class TcpOutput {
 
     return new Promise<R>((resolve, reject) => {
       const id = this.adapter.getDataResolver().register(resolve, reject);
+      packet.id = id;
+      this.send(packet, false).catch(reject);
+    });
+  }
+
+  async requestWithTimeout<R = any, T = any>(
+    data: T,
+    type: number,
+    timeout: number | null
+  ): Promise<R>;
+  async requestWithTimeout<R = any, T = any>(
+    packet: Packet<T>,
+    timeout: number | null
+  ): Promise<R>;
+  async requestWithTimeout<R = any, T = any>(
+    packetOrData: Packet<T> | T,
+    typeOrTimeout: number | null,
+    timeout: number | null = null
+  ): Promise<R> {
+    const packet =
+      packetOrData instanceof Packet
+        ? packetOrData
+        : new Packet(packetOrData, typeOrTimeout as number);
+
+    return new Promise<R>((resolve, reject) => {
+      const id = this.adapter
+        .getDataResolver()
+        .registerWithTimeout(resolve, reject, timeout);
       packet.id = id;
       this.send(packet, false).catch(reject);
     });
