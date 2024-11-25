@@ -19,7 +19,7 @@ class PacketOutput extends TcpOutput_1.TcpOutput {
     }
     response(data_1) {
         return __awaiter(this, arguments, void 0, function* (data, silent = false, type = this.packet.type) {
-            const packet = new Packet_1.Packet(data, type, this.packet.id);
+            const packet = new Packet_1.Packet(data, type, this.packet.id).markAsFeedBack();
             return this.send(packet, silent).then(() => packet);
         });
     }

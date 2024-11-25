@@ -4,30 +4,35 @@ exports.Packet = exports.PacketTypeDefault = void 0;
 exports.isPacketSerializable = isPacketSerializable;
 const constants_1 = require("./constants");
 const PacketOutput_1 = require("./PacketOutput");
+const utils_1 = require("./utils");
 var PacketTypeDefault;
 (function (PacketTypeDefault) {
     PacketTypeDefault[PacketTypeDefault["Error"] = 0] = "Error";
     PacketTypeDefault[PacketTypeDefault["Data"] = 1] = "Data";
+    PacketTypeDefault[PacketTypeDefault["File"] = 416] = "File";
 })(PacketTypeDefault || (exports.PacketTypeDefault = PacketTypeDefault = {}));
 function isPacketSerializable(obj) {
     return (typeof obj === "object" && obj !== null && "type" in obj && "data" in obj);
 }
 class Packet {
     constructor(dataOrId, typeOrData, id) {
-        if (typeof dataOrId === "string") {
-            this.id = dataOrId;
-            this.data = typeOrData;
-            this.type = PacketTypeDefault.Data;
-        }
-        else if (arguments.length === 1) {
+        this.isFeedback = false;
+        if (arguments.length === 1) {
             this.data = dataOrId;
             this.type = PacketTypeDefault.Data;
             this.id = constants_1.NON_ID;
         }
-        else if (arguments.length === 2 && typeof typeOrData === "number") {
-            this.data = dataOrId;
-            this.type = typeOrData;
-            this.id = constants_1.NON_ID;
+        else if (arguments.length === 2) {
+            if ((0, utils_1.isUUID)(String(dataOrId))) {
+                this.data = typeOrData;
+                this.type = PacketTypeDefault.Data;
+                this.id = dataOrId;
+            }
+            else {
+                this.data = dataOrId;
+                this.type = typeOrData;
+                this.id = constants_1.NON_ID;
+            }
         }
         else {
             this.data = dataOrId;
@@ -50,6 +55,18 @@ class Packet {
     }
     newOutput(adapter) {
         return new PacketOutput_1.PacketOutput(this, adapter);
+    }
+    markAsFeedBack() {
+        this.isFeedback = true;
+        return this;
+    }
+    unMarkAsFeedBack() {
+        this.isFeedback = false;
+        return this;
+    }
+    setFeedback(value) {
+        this.isFeedback = value;
+        return this;
     }
 }
 exports.Packet = Packet;

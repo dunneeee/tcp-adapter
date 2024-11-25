@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TcpOutput = void 0;
+const stream_1 = require("stream");
 const Packet_1 = require("./Packet");
 class TcpOutput {
     constructor(adapter) {
@@ -44,6 +45,41 @@ class TcpOutput {
                 this.send(packet, false).catch(reject);
             });
         });
+    }
+    requestWithTimeout(packetOrData_1, typeOrTimeout_1) {
+        return __awaiter(this, arguments, void 0, function* (packetOrData, typeOrTimeout, timeout = null) {
+            const packet = packetOrData instanceof Packet_1.Packet
+                ? packetOrData
+                : new Packet_1.Packet(packetOrData, typeOrTimeout);
+            return new Promise((resolve, reject) => {
+                const id = this.adapter
+                    .getDataResolver()
+                    .registerWithTimeout(resolve, reject, timeout);
+                packet.id = id;
+                this.send(packet, false).catch(reject);
+            });
+        });
+    }
+    stream(id, onWriteCallback) {
+        const output = this;
+        const stream = new stream_1.Writable({
+            write(chunk, _, callback) {
+                const packet = new Packet_1.Packet(chunk, Packet_1.PacketTypeDefault.File, id);
+                onWriteCallback({ chunk, length: chunk.length });
+                output
+                    .send(packet, false)
+                    .then(() => callback())
+                    .catch(callback);
+            },
+            final(callback) {
+                const packet = new Packet_1.Packet(null, Packet_1.PacketTypeDefault.File, id);
+                output
+                    .send(packet, false)
+                    .then(() => callback())
+                    .catch(callback);
+            },
+        });
+        return stream;
     }
 }
 exports.TcpOutput = TcpOutput;

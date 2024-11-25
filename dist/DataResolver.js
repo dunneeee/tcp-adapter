@@ -19,6 +19,21 @@ class DataResolver {
         });
         return id;
     }
+    registerWithTimeout(resolve, reject, timeout = this.config.timeout, id) {
+        id = id || (0, crypto_1.randomUUID)();
+        let timeoutId = {};
+        if (timeout) {
+            timeoutId = setTimeout(() => {
+                this.reject(id, new Error("TIMEOUT"));
+            }, timeout || this.config.timeout);
+        }
+        this.pendingHandlers.set(id, {
+            resolve,
+            reject,
+            timeout: timeoutId,
+        });
+        return id;
+    }
     resolve(id, data) {
         const handler = this.pendingHandlers.get(id);
         if (handler) {

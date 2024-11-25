@@ -12,6 +12,8 @@ export declare class DataResolver {
     constructor(config?: Partial<DataResolverConfig>);
     register(resolve: Function, reject: Function, id: string): void;
     register(resolve: Function, reject: Function): string;
+    registerWithTimeout(resolve: Function, reject: Function, timeout: number | null): string;
+    registerWithTimeout(resolve: Function, reject: Function, timeout: number | null, id: string): void;
     resolve<T>(id: string, data: T): void;
     reject(id: string, error: Error): void;
     clear(): void;
