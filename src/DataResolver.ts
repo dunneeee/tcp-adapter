@@ -20,7 +20,7 @@ export class DataResolver {
     };
   }
 
-  public register(resolve: Function, reject: Function, id: string): void;
+  public register(resolve: Function, reject: Function, id: string): string;
   public register(resolve: Function, reject: Function): string;
   public register(
     resolve: Function,

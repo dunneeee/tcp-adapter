@@ -1,7 +1,6 @@
-import { Writable } from "stream";
+import { ReadStream } from "fs";
 import { Packet, PacketTypeDefault } from "./Packet";
 import { TcpAdapter } from "./TcpAdapter";
-import { FileCallbackParams } from "./types";
 
 export class TcpOutput {
   constructor(private adapter: TcpAdapter) {}
@@ -29,19 +28,31 @@ export class TcpOutput {
     });
   }
 
-  async request<R = any, T = any>(data: T, type?: number): Promise<R>;
+  async request<R = any, T = any>(data: T, type: number): Promise<R>;
+  async request<R = any, T = any>(
+    data: T,
+    type: number,
+    id: string
+  ): Promise<R>;
+  async request<R = any, T = any>(data: T, id: string): Promise<R>;
+  async request<R = any, T = any>(packet: Packet<T>, id: string): Promise<R>;
   async request<R = any, T = any>(packet: Packet<T>): Promise<R>;
+  async request<R = any, T = any>(data: T): Promise<R>;
   async request<R = any, T = any>(
     packetOrData: Packet<T> | T,
-    type = PacketTypeDefault.Data
+    typeOrId?: number | string,
+    id?: string
   ): Promise<R> {
+    const _id = typeof typeOrId === "string" ? typeOrId : id;
+    const type =
+      typeof typeOrId === "number" ? typeOrId : PacketTypeDefault.Data;
     const packet =
       packetOrData instanceof Packet
         ? packetOrData
         : new Packet(packetOrData, type);
 
     return new Promise<R>((resolve, reject) => {
-      const id = this.adapter.getDataResolver().register(resolve, reject);
+      const id = this.adapter.getDataResolver().register(resolve, reject, _id!);
       packet.id = id;
       this.send(packet, false).catch(reject);
     });
@@ -75,30 +86,30 @@ export class TcpOutput {
     });
   }
 
-  stream(
-    id: string,
-    onWriteCallback: (params: FileCallbackParams) => void
-  ): Writable {
-    const output = this;
-    const stream = new Writable({
-      write(chunk, _, callback) {
-        const packet = new Packet(chunk, PacketTypeDefault.File, id);
-        onWriteCallback({ chunk, length: chunk.length });
-        output
-          .send(packet, false)
-          .then(() => callback())
-          .catch(callback);
-      },
+  async stream(id: string, stream: ReadStream): Promise<void> {
+    return new Promise((resolve, reject) => {
+      stream.on("data", (chunk) => {
+        stream.pause();
+        const packet = new Packet(chunk, PacketTypeDefault.File);
+        this.request(packet, id)
+          .then((res) => {
+            console.log(res);
+            stream.resume();
+          })
+          .catch((e) => {
+            reject(e);
+            stream.close();
+          });
+      });
 
-      final(callback) {
-        const packet = new Packet(null, PacketTypeDefault.File, id);
-        output
-          .send(packet, false)
-          .then(() => callback())
-          .catch(callback);
-      },
+      stream.on("end", () => {
+        const packet = new Packet(null, PacketTypeDefault.File);
+        this.request(packet, id)
+          .then(() => {
+            resolve();
+          })
+          .catch(reject);
+      });
     });
-
-    return stream;
   }
 }
