@@ -1,3 +1,4 @@
+import { existsSync } from "fs";
 import { Packet, PacketTypeDefault } from "./Packet";
 import { FileInfo } from "./types";
 import fs from "fs/promises";
@@ -42,4 +43,16 @@ export function isFileInfo(data: any): data is FileInfo {
 
 export function isFilePacket(packet: Packet) {
   return packet.type === PacketTypeDefault.File;
+}
+
+export function generateFilepath(path: string): string {
+  if (existsSync(path)) {
+    const parts = path.split(".");
+    const ext = parts.pop();
+    return (
+      parts.join(".") + Math.random().toString(36).substring(2) + "." + ext
+    );
+  }
+
+  return path;
 }

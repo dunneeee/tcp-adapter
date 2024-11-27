@@ -1,7 +1,7 @@
 import { createWriteStream, WriteStream } from "fs";
 import { Packet } from "./Packet";
 import { FileInfo } from "./types";
-import { isFileInfo } from "./utils";
+import { generateFilepath, isFileInfo } from "./utils";
 import { TcpAdapter } from "./TcpAdapter";
 import path from "path";
 import { ACK } from "./constants";
@@ -27,10 +27,10 @@ export class FileProcess {
 
     if (!this.map.has(id)) {
       if (!isFileInfo(packet.data)) throw new Error("INVALID_DATA");
-
-      const writeStream = createWriteStream(
+      const filePath = generateFilepath(
         path.resolve(this.config.rootFolder, packet.data.name)
       );
+      const writeStream = createWriteStream(filePath);
 
       this.map.set(id, {
         info: packet.data,
