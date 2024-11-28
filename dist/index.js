@@ -24,4 +24,6 @@ __exportStar(require("./TcpOutput"), exports);
 __exportStar(require("./PacketOutput"), exports);
 __exportStar(require("./typeUtils"), exports);
 __exportStar(require("./utils"), exports);
+__exportStar(require("./DataResolver"), exports);
+__exportStar(require("./FileProcess"), exports);
 //# sourceMappingURL=index.js.map

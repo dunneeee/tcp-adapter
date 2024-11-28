@@ -10,7 +10,7 @@ export declare class DataResolver {
     private pendingHandlers;
     private config;
     constructor(config?: Partial<DataResolverConfig>);
-    register(resolve: Function, reject: Function, id: string): void;
+    register(resolve: Function, reject: Function, id: string): string;
     register(resolve: Function, reject: Function): string;
     registerWithTimeout(resolve: Function, reject: Function, timeout: number | null): string;
     registerWithTimeout(resolve: Function, reject: Function, timeout: number | null, id: string): void;

@@ -8,3 +8,5 @@ export * from "./TcpOutput";
 export * from "./PacketOutput";
 export * from "./typeUtils";
 export * from "./utils";
+export * from "./DataResolver";
+export * from "./FileProcess";

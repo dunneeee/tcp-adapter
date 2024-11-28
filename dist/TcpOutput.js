@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TcpOutput = void 0;
-const stream_1 = require("stream");
 const Packet_1 = require("./Packet");
 class TcpOutput {
     constructor(adapter) {
@@ -34,13 +33,15 @@ class TcpOutput {
             });
         });
     }
-    request(packetOrData_1) {
-        return __awaiter(this, arguments, void 0, function* (packetOrData, type = Packet_1.PacketTypeDefault.Data) {
+    request(packetOrData, typeOrId, id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const _id = typeof typeOrId === "string" ? typeOrId : id;
+            const type = typeof typeOrId === "number" ? typeOrId : Packet_1.PacketTypeDefault.Data;
             const packet = packetOrData instanceof Packet_1.Packet
                 ? packetOrData
                 : new Packet_1.Packet(packetOrData, type);
             return new Promise((resolve, reject) => {
-                const id = this.adapter.getDataResolver().register(resolve, reject);
+                const id = this.adapter.getDataResolver().register(resolve, reject, _id);
                 packet.id = id;
                 this.send(packet, false).catch(reject);
             });
@@ -60,26 +61,32 @@ class TcpOutput {
             });
         });
     }
-    stream(id, onWriteCallback) {
-        const output = this;
-        const stream = new stream_1.Writable({
-            write(chunk, _, callback) {
-                const packet = new Packet_1.Packet(chunk, Packet_1.PacketTypeDefault.File, id);
-                onWriteCallback({ chunk, length: chunk.length });
-                output
-                    .send(packet, false)
-                    .then(() => callback())
-                    .catch(callback);
-            },
-            final(callback) {
-                const packet = new Packet_1.Packet(null, Packet_1.PacketTypeDefault.File, id);
-                output
-                    .send(packet, false)
-                    .then(() => callback())
-                    .catch(callback);
-            },
+    stream(id, stream) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise((resolve, reject) => {
+                stream.on("data", (chunk) => {
+                    stream.pause();
+                    const packet = new Packet_1.Packet(chunk, Packet_1.PacketTypeDefault.File);
+                    this.request(packet, id)
+                        .then((res) => {
+                        console.log(res);
+                        stream.resume();
+                    })
+                        .catch((e) => {
+                        reject(e);
+                        stream.close();
+                    });
+                });
+                stream.on("end", () => {
+                    const packet = new Packet_1.Packet(null, Packet_1.PacketTypeDefault.File);
+                    this.request(packet, id)
+                        .then(() => {
+                        resolve();
+                    })
+                        .catch(reject);
+                });
+            });
         });
-        return stream;
     }
 }
 exports.TcpOutput = TcpOutput;
