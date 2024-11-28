@@ -73,6 +73,19 @@ export class TcpAdapter extends EventEmitter<TcpAdapterEventMap> {
     return this.packetTransformer;
   }
 
+  setSocket(socket: Socket) {
+    this.clean();
+    this.socket = socket;
+    this.init();
+  }
+
+  clean() {
+    this.dataResolver.clearQuietly();
+    this.socket.removeAllListeners();
+    this.socket.destroy();
+    return this;
+  }
+
   private init() {
     this.socket.on("error", this.handleSocketError.bind(this));
 

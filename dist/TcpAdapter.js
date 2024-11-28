@@ -49,6 +49,17 @@ class TcpAdapter extends events_1.default {
     getPacketTransformer() {
         return this.packetTransformer;
     }
+    setSocket(socket) {
+        this.clean();
+        this.socket = socket;
+        this.init();
+    }
+    clean() {
+        this.dataResolver.clearQuietly();
+        this.socket.removeAllListeners();
+        this.socket.destroy();
+        return this;
+    }
     init() {
         this.socket.on("error", this.handleSocketError.bind(this));
         this.socket.on("close", this.handleSocketDisconnect.bind(this));

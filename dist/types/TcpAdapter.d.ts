@@ -30,5 +30,7 @@ export declare class TcpAdapter extends EventEmitter<TcpAdapterEventMap> {
     getSocket(): Socket;
     getDataResolver(): DataResolver;
     getPacketTransformer(): Transformer<Packet<any>>;
+    setSocket(socket: Socket): void;
+    clean(): this;
     private init;
 }
