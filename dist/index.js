@@ -26,4 +26,5 @@ __exportStar(require("./typeUtils"), exports);
 __exportStar(require("./utils"), exports);
 __exportStar(require("./DataResolver"), exports);
 __exportStar(require("./FileProcess"), exports);
+__exportStar(require("./types"), exports);
 //# sourceMappingURL=index.js.map

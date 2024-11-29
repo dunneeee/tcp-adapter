@@ -10,3 +10,4 @@ export * from "./typeUtils";
 export * from "./utils";
 export * from "./DataResolver";
 export * from "./FileProcess";
+export * from "./types";
