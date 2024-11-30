@@ -104,7 +104,6 @@ export class TcpOutput {
         (stream.destroyed && buffer.length === 0) ||
         this.adapter.getSocket().destroyed
       ) {
-        console.log("DESTROYED");
         loop.cancel();
         return;
       }

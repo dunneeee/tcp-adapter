@@ -19,6 +19,7 @@ exports.isUUID = isUUID;
 exports.getFileInfo = getFileInfo;
 exports.isFileInfo = isFileInfo;
 exports.isFilePacket = isFilePacket;
+exports.isFileChunk = isFileChunk;
 exports.generateFilepath = generateFilepath;
 exports.createFileIfNotExists = createFileIfNotExists;
 const fs_1 = require("fs");
@@ -59,6 +60,9 @@ function isFileInfo(data) {
 }
 function isFilePacket(packet) {
     return packet.type === Packet_1.PacketTypeDefault.File;
+}
+function isFileChunk(data) {
+    return typeof data === "object" && "chunk" in data && "id" in data;
 }
 function generateFilepath(path) {
     if ((0, fs_1.existsSync)(path)) {

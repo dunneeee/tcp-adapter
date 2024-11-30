@@ -11,6 +11,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TcpOutput = void 0;
 const Packet_1 = require("./Packet");
+const PauseableLoop_1 = require("./PauseableLoop");
+const fs_1 = require("fs");
 class TcpOutput {
     constructor(adapter) {
         this.adapter = adapter;
@@ -61,31 +63,40 @@ class TcpOutput {
             });
         });
     }
-    stream(id, stream) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return new Promise((resolve, reject) => {
-                stream.on("data", (chunk) => {
-                    stream.pause();
-                    const packet = new Packet_1.Packet(chunk, Packet_1.PacketTypeDefault.File);
-                    this.request(packet, id)
-                        .then(() => {
-                        stream.resume();
-                    })
-                        .catch((e) => {
-                        reject(e);
-                        stream.close();
-                    });
-                });
-                stream.on("end", () => {
-                    const packet = new Packet_1.Packet(null, Packet_1.PacketTypeDefault.File);
-                    this.request(packet, id)
-                        .then(() => {
-                        resolve();
-                    })
-                        .catch(reject);
-                });
-            });
+    stream(id, path, chunkSize = 1024 * 32) {
+        const pausePoint = chunkSize * 160;
+        const stream = (0, fs_1.createReadStream)(path, { highWaterMark: chunkSize });
+        let buffer = Buffer.from([]);
+        let length = 0;
+        stream.on("data", (chunk) => {
+            if (buffer.length >= pausePoint) {
+                stream.pause();
+            }
+            buffer = Buffer.concat([buffer, Buffer.from(chunk)]);
         });
+        const loop = new PauseableLoop_1.PauseableLoop(() => __awaiter(this, void 0, void 0, function* () {
+            if ((stream.destroyed && buffer.length === 0) ||
+                this.adapter.getSocket().destroyed) {
+                loop.cancel();
+                return;
+            }
+            if (buffer.length === 0) {
+                stream.resume();
+                return;
+            }
+            const chunk = buffer.subarray(0, chunkSize);
+            buffer = buffer.subarray(chunkSize);
+            length += chunk.length;
+            if (buffer.length <= pausePoint) {
+                stream.resume();
+            }
+            this.send(new Packet_1.Packet({ id, chunk }, Packet_1.PacketTypeDefault.File));
+        }), 1000);
+        return {
+            stream,
+            loop,
+            getLength: () => length,
+        };
     }
 }
 exports.TcpOutput = TcpOutput;

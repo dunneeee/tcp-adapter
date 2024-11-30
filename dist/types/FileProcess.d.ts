@@ -1,14 +1,18 @@
 import { Packet } from "./Packet";
-import { TcpAdapter } from "./TcpAdapter";
-export interface FileProcessConfig {
-    rootFolder: string;
-    timeout?: number;
+import { FileChunk, FileInfo } from "./types";
+import EventEmitter from "events";
+interface EventMap {
+    end: [FileInfo];
+    error: [Error];
+    data: [{
+        chunk: Buffer;
+        length: number;
+        info: FileInfo;
+    }];
 }
-export declare class FileProcess {
-    config: FileProcessConfig;
+export declare class FileProcess extends EventEmitter<EventMap> {
     private map;
-    constructor(config: FileProcessConfig);
-    process(packet: Packet, adapter: TcpAdapter): Promise<Packet<string>>;
-    private createTimeout;
-    private clearTimeout;
+    process(packet: Packet<FileChunk>): Promise<void>;
+    createStream(info: FileInfo): `${string}-${string}-${string}-${string}-${string}`;
 }
+export {};

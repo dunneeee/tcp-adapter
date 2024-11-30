@@ -15,68 +15,43 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.FileProcess = void 0;
 const fs_1 = require("fs");
 const utils_1 = require("./utils");
-const path_1 = __importDefault(require("path"));
-const constants_1 = require("./constants");
-class FileProcess {
-    constructor(config) {
-        this.config = config;
+const crypto_1 = require("crypto");
+const events_1 = __importDefault(require("events"));
+class FileProcess extends events_1.default {
+    constructor() {
+        super(...arguments);
         this.map = new Map();
     }
-    process(packet, adapter) {
+    process(packet) {
         return __awaiter(this, void 0, void 0, function* () {
-            const id = packet.id;
-            if (!this.map.has(id)) {
-                if (!(0, utils_1.isFileInfo)(packet.data))
-                    throw new Error("INVALID_DATA");
-                const filePath = (0, utils_1.generateFilepath)(path_1.default.resolve(this.config.rootFolder, packet.data.name));
-                (0, utils_1.createFileIfNotExists)(filePath);
-                const writeStream = (0, fs_1.createWriteStream)(filePath);
-                adapter.once("disconnect", () => {
-                    writeStream.close();
+            if ((0, utils_1.isFileChunk)(packet.data)) {
+                const { chunk, id } = packet.data;
+                const info = this.map.get(id);
+                if (!info || !chunk)
+                    return;
+                const bufferChunk = Buffer.from(chunk);
+                info.stream.write(bufferChunk);
+                info.length += bufferChunk.length;
+                this.emit("data", { chunk, length: info.length, info: info.info });
+                if (info.length >= info.info.size) {
+                    this.emit("end", info.info);
+                    info.stream.end();
+                    clearTimeout(info.timeout);
                     this.map.delete(id);
-                });
-                this.map.set(id, {
-                    info: packet.data,
-                    writeStream,
-                });
-                this.createTimeout(id);
-                return packet.newOutput(adapter).response(id);
+                }
             }
-            const handler = this.map.get(id);
-            if (!handler)
-                throw new Error("NOT_FOUND");
-            this.clearTimeout(id);
-            if (!packet.data) {
-                handler.writeStream.end();
-                this.map.delete(id);
-                return packet.newOutput(adapter).response(constants_1.ACK);
-            }
-            handler.writeStream.write(Buffer.from(packet.data));
-            this.createTimeout(id);
-            return packet.newOutput(adapter).response(constants_1.ACK);
         });
     }
-    createTimeout(id) {
-        const handler = this.map.get(id);
-        if (!handler || !this.config.timeout)
-            return;
-        if (handler.timeout) {
-            clearTimeout(handler.timeout);
-        }
-        handler.timeout = setTimeout(() => {
+    createStream(info) {
+        const path = (0, utils_1.generateFilepath)(info.path);
+        const stream = (0, fs_1.createWriteStream)(path);
+        const id = (0, crypto_1.randomUUID)();
+        const timeout = setTimeout(() => {
+            stream.end();
             this.map.delete(id);
-            handler.writeStream.close();
-        }, this.config.timeout);
-        this.map.set(id, handler);
-        return handler.timeout;
-    }
-    clearTimeout(id) {
-        const handler = this.map.get(id);
-        if (!handler)
-            return;
-        clearTimeout(handler.timeout);
-        handler.timeout = undefined;
-        this.map.set(id, handler);
+        }, 1000 * 60 * 5);
+        this.map.set(id, { stream, info, length: 0, path, timeout });
+        return id;
     }
 }
 exports.FileProcess = FileProcess;
