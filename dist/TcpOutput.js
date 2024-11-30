@@ -68,8 +68,7 @@ class TcpOutput {
                     stream.pause();
                     const packet = new Packet_1.Packet(chunk, Packet_1.PacketTypeDefault.File);
                     this.request(packet, id)
-                        .then((res) => {
-                        console.log(res);
+                        .then(() => {
                         stream.resume();
                     })
                         .catch((e) => {

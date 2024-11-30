@@ -20,9 +20,11 @@ exports.getFileInfo = getFileInfo;
 exports.isFileInfo = isFileInfo;
 exports.isFilePacket = isFilePacket;
 exports.generateFilepath = generateFilepath;
+exports.createFileIfNotExists = createFileIfNotExists;
 const fs_1 = require("fs");
 const Packet_1 = require("./Packet");
 const promises_1 = __importDefault(require("fs/promises"));
+const path_1 = require("path");
 function stringToCodePoints(str) {
     return Array.from(str).map((char) => char.charCodeAt(0));
 }
@@ -65,5 +67,14 @@ function generateFilepath(path) {
         return (parts.join(".") + Math.random().toString(36).substring(2) + "." + ext);
     }
     return path;
+}
+function createFileIfNotExists(path) {
+    const dir = (0, path_1.dirname)(path);
+    if (!(0, fs_1.existsSync)(dir)) {
+        promises_1.default.mkdir(dir, { recursive: true });
+    }
+    if (!(0, fs_1.existsSync)(path)) {
+        promises_1.default.writeFile(path, "");
+    }
 }
 //# sourceMappingURL=utils.js.map

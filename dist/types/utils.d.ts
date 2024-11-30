@@ -8,3 +8,4 @@ export declare function getFileInfo(filePath: string): Promise<FileInfo>;
 export declare function isFileInfo(data: any): data is FileInfo;
 export declare function isFilePacket(packet: Packet): boolean;
 export declare function generateFilepath(path: string): string;
+export declare function createFileIfNotExists(path: string): void;

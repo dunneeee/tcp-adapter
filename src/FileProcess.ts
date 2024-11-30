@@ -1,7 +1,7 @@
-import { createWriteStream, WriteStream } from "fs";
+import { createWriteStream, existsSync, WriteStream } from "fs";
 import { Packet } from "./Packet";
 import { FileInfo } from "./types";
-import { generateFilepath, isFileInfo } from "./utils";
+import { createFileIfNotExists, generateFilepath, isFileInfo } from "./utils";
 import { TcpAdapter } from "./TcpAdapter";
 import path from "path";
 import { ACK } from "./constants";
@@ -30,6 +30,9 @@ export class FileProcess {
       const filePath = generateFilepath(
         path.resolve(this.config.rootFolder, packet.data.name)
       );
+
+      createFileIfNotExists(filePath);
+
       const writeStream = createWriteStream(filePath);
 
       this.map.set(id, {

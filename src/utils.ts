@@ -2,6 +2,7 @@ import { existsSync } from "fs";
 import { Packet, PacketTypeDefault } from "./Packet";
 import { FileInfo } from "./types";
 import fs from "fs/promises";
+import { dirname } from "path";
 
 export function stringToCodePoints(str: string): number[] {
   return Array.from(str).map((char) => char.charCodeAt(0));
@@ -55,4 +56,16 @@ export function generateFilepath(path: string): string {
   }
 
   return path;
+}
+
+export function createFileIfNotExists(path: string) {
+  const dir = dirname(path);
+
+  if (!existsSync(dir)) {
+    fs.mkdir(dir, { recursive: true });
+  }
+
+  if (!existsSync(path)) {
+    fs.writeFile(path, "");
+  }
 }
