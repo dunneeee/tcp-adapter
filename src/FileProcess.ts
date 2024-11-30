@@ -16,6 +16,7 @@ export class FileProcess extends EventEmitter<EventMap> {
   async process(packet: Packet<FileChunk>) {
     if (isFileChunk(packet.data)) {
       const { chunk, id } = packet.data;
+      this.setTimeout(id);
       const info = this.map.get(id);
       if (!info || !chunk) return;
       const bufferChunk = Buffer.from(chunk);
@@ -44,5 +45,15 @@ export class FileProcess extends EventEmitter<EventMap> {
     this.map.set(id, { stream, info, length: 0, path, timeout });
 
     return id;
+  }
+
+  private setTimeout(id: string) {
+    const info = this.map.get(id);
+    if (!info) return;
+    clearTimeout(info.timeout);
+    info.timeout = setTimeout(() => {
+      info.stream.end();
+      this.map.delete(id);
+    }, 1000 * 60 * 5);
   }
 }

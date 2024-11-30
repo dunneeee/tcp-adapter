@@ -26,6 +26,7 @@ class FileProcess extends events_1.default {
         return __awaiter(this, void 0, void 0, function* () {
             if ((0, utils_1.isFileChunk)(packet.data)) {
                 const { chunk, id } = packet.data;
+                this.setTimeout(id);
                 const info = this.map.get(id);
                 if (!info || !chunk)
                     return;
@@ -52,6 +53,16 @@ class FileProcess extends events_1.default {
         }, 1000 * 60 * 5);
         this.map.set(id, { stream, info, length: 0, path, timeout });
         return id;
+    }
+    setTimeout(id) {
+        const info = this.map.get(id);
+        if (!info)
+            return;
+        clearTimeout(info.timeout);
+        info.timeout = setTimeout(() => {
+            info.stream.end();
+            this.map.delete(id);
+        }, 1000 * 60 * 5);
     }
 }
 exports.FileProcess = FileProcess;

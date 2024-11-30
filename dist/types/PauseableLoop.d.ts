@@ -1,16 +1,26 @@
-export declare class PauseableLoop {
+import EventEmitter from "events";
+interface EventMap {
+    start: [];
+    pause: [];
+    resume: [];
+    stop: [];
+    cancel: [];
+    loop: [];
+}
+export declare class PauseableLoop extends EventEmitter<EventMap> {
     private callback;
-    private interval;
     private timeout;
     private isRunning;
     private isPaused;
     private isCancelled;
     private subCallback;
-    constructor(callback: () => void, interval: number);
+    constructor(callback: () => void);
     start(callback?: () => void): void;
     pause(): void;
     resume(): void;
     stop(): void;
     cancel(): void;
     private loop;
+    clear(): void;
 }
+export {};

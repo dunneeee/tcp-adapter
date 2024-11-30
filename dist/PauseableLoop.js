@@ -1,10 +1,14 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PauseableLoop = void 0;
-class PauseableLoop {
-    constructor(callback, interval) {
+const events_1 = __importDefault(require("events"));
+class PauseableLoop extends events_1.default {
+    constructor(callback) {
+        super();
         this.callback = callback;
-        this.interval = interval;
         this.timeout = null;
         this.isRunning = false;
         this.isPaused = false;
@@ -12,6 +16,7 @@ class PauseableLoop {
         this.subCallback = null;
     }
     start(callback) {
+        this.emit("start");
         if (callback)
             this.subCallback = callback;
         if (this.isRunning)
@@ -20,35 +25,42 @@ class PauseableLoop {
         this.loop();
     }
     pause() {
+        this.emit("pause");
         this.isPaused = true;
-        if (this.timeout)
-            clearTimeout(this.timeout);
+        this.clear();
     }
     resume() {
+        this.emit("resume");
         if (!this.isPaused)
             return;
         this.isPaused = false;
         this.loop();
     }
     stop() {
+        this.emit("stop");
         this.isRunning = false;
-        if (this.timeout)
-            clearTimeout(this.timeout);
+        this.clear();
     }
     cancel() {
+        this.emit("cancel");
         this.isCancelled = true;
         this.stop();
     }
     loop() {
         if (this.isCancelled || !this.isRunning)
             return;
-        this.timeout = setTimeout(() => {
+        this.emit("loop");
+        this.timeout = setImmediate(() => {
             if (this.isPaused)
                 return;
             this.callback();
             this.subCallback && this.subCallback();
             this.loop();
-        }, this.interval);
+        });
+    }
+    clear() {
+        if (this.timeout)
+            clearImmediate(this.timeout);
     }
 }
 exports.PauseableLoop = PauseableLoop;

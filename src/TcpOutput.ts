@@ -1,3 +1,9 @@
+import {
+  BUFFER_SIZE,
+  CHUNK_SIZE,
+  PAUSE_THRESHOLD,
+  RESUME_THRESHOLD,
+} from "./constants";
 import { Packet, PacketTypeDefault } from "./Packet";
 import { PauseableLoop } from "./PauseableLoop";
 import { TcpAdapter } from "./TcpAdapter";
@@ -87,16 +93,22 @@ export class TcpOutput {
     });
   }
 
-  stream(id: string, path: string, chunkSize = 1024 * 32) {
-    const pausePoint = chunkSize * 160;
-    const stream = createReadStream(path, { highWaterMark: chunkSize });
-    let buffer: Buffer = Buffer.from([]);
+  stream(id: number, filePath: string) {
+    let buffer = Buffer.alloc(0);
     let length = 0;
-    stream.on("data", (chunk) => {
+
+    const stream = createReadStream(filePath, {
+      highWaterMark: CHUNK_SIZE,
+    });
+
+    const pausePoint = BUFFER_SIZE * PAUSE_THRESHOLD;
+    const resumePoint = BUFFER_SIZE * RESUME_THRESHOLD;
+
+    stream.on("data", (chunk: Buffer) => {
       if (buffer.length >= pausePoint) {
         stream.pause();
       }
-      buffer = Buffer.concat([buffer, Buffer.from(chunk)]);
+      buffer = Buffer.concat([buffer, chunk]);
     });
 
     const loop = new PauseableLoop(async () => {
@@ -107,25 +119,24 @@ export class TcpOutput {
         loop.cancel();
         return;
       }
+
       if (buffer.length === 0) {
         stream.resume();
         return;
       }
 
-      const chunk = buffer.subarray(0, chunkSize);
-      buffer = buffer.subarray(chunkSize);
-
+      const chunk = buffer.subarray(0, CHUNK_SIZE);
+      buffer = buffer.subarray(CHUNK_SIZE);
       length += chunk.length;
 
-      if (buffer.length <= pausePoint) {
+      if (buffer.length <= resumePoint) {
         stream.resume();
       }
 
-      this.send(new Packet({ id, chunk }, PacketTypeDefault.File));
-    }, 1000);
+      await this.send(new Packet({ id, chunk }, PacketTypeDefault.Data));
+    });
 
     return {
-      stream,
       loop,
       getLength: () => length,
     };

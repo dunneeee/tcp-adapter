@@ -1,7 +1,6 @@
 import { Packet } from "./Packet";
 import { PauseableLoop } from "./PauseableLoop";
 import { TcpAdapter } from "./TcpAdapter";
-import { ReadStream } from "fs";
 export declare class TcpOutput {
     private adapter;
     constructor(adapter: TcpAdapter);
@@ -15,8 +14,7 @@ export declare class TcpOutput {
     request<R = any, T = any>(data: T): Promise<R>;
     requestWithTimeout<R = any, T = any>(data: T, type: number, timeout: number | null): Promise<R>;
     requestWithTimeout<R = any, T = any>(packet: Packet<T>, timeout: number | null): Promise<R>;
-    stream(id: string, path: string, chunkSize?: number): {
-        stream: ReadStream;
+    stream(id: number, filePath: string): {
         loop: PauseableLoop;
         getLength: () => number;
     };

@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TcpOutput = void 0;
+const constants_1 = require("./constants");
 const Packet_1 = require("./Packet");
 const PauseableLoop_1 = require("./PauseableLoop");
 const fs_1 = require("fs");
@@ -63,16 +64,19 @@ class TcpOutput {
             });
         });
     }
-    stream(id, path, chunkSize = 1024 * 32) {
-        const pausePoint = chunkSize * 160;
-        const stream = (0, fs_1.createReadStream)(path, { highWaterMark: chunkSize });
-        let buffer = Buffer.from([]);
+    stream(id, filePath) {
+        let buffer = Buffer.alloc(0);
         let length = 0;
+        const stream = (0, fs_1.createReadStream)(filePath, {
+            highWaterMark: constants_1.CHUNK_SIZE,
+        });
+        const pausePoint = constants_1.BUFFER_SIZE * constants_1.PAUSE_THRESHOLD;
+        const resumePoint = constants_1.BUFFER_SIZE * constants_1.RESUME_THRESHOLD;
         stream.on("data", (chunk) => {
             if (buffer.length >= pausePoint) {
                 stream.pause();
             }
-            buffer = Buffer.concat([buffer, Buffer.from(chunk)]);
+            buffer = Buffer.concat([buffer, chunk]);
         });
         const loop = new PauseableLoop_1.PauseableLoop(() => __awaiter(this, void 0, void 0, function* () {
             if ((stream.destroyed && buffer.length === 0) ||
@@ -84,16 +88,15 @@ class TcpOutput {
                 stream.resume();
                 return;
             }
-            const chunk = buffer.subarray(0, chunkSize);
-            buffer = buffer.subarray(chunkSize);
+            const chunk = buffer.subarray(0, constants_1.CHUNK_SIZE);
+            buffer = buffer.subarray(constants_1.CHUNK_SIZE);
             length += chunk.length;
-            if (buffer.length <= pausePoint) {
+            if (buffer.length <= resumePoint) {
                 stream.resume();
             }
-            this.send(new Packet_1.Packet({ id, chunk }, Packet_1.PacketTypeDefault.File));
-        }), 1000);
+            yield this.send(new Packet_1.Packet({ id, chunk }, Packet_1.PacketTypeDefault.Data));
+        }));
         return {
-            stream,
             loop,
             getLength: () => length,
         };
