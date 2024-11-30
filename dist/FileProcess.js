@@ -33,11 +33,12 @@ class FileProcess extends events_1.default {
                 const bufferChunk = Buffer.from(chunk);
                 info.stream.write(bufferChunk);
                 info.length += bufferChunk.length;
-                this.emit("data", { chunk, length: info.length, info: info.info });
+                this.emit("data", { chunk, length: info.length, info: info.info, id });
                 if (info.length >= info.info.size) {
-                    this.emit("end", info.info);
+                    this.emit("end", info.info, id);
                     info.stream.end();
-                    clearTimeout(info.timeout);
+                    if (info.timeout)
+                        clearTimeout(info.timeout);
                     this.map.delete(id);
                 }
             }
@@ -47,22 +48,28 @@ class FileProcess extends events_1.default {
         const path = (0, utils_1.generateFilepath)(info.path);
         const stream = (0, fs_1.createWriteStream)(path);
         const id = (0, crypto_1.randomUUID)();
-        const timeout = setTimeout(() => {
-            stream.end();
-            this.map.delete(id);
-        }, 1000 * 60 * 5);
-        this.map.set(id, { stream, info, length: 0, path, timeout });
+        this.map.set(id, {
+            stream,
+            info,
+            length: 0,
+            path,
+            timeout: null,
+        });
+        this.setTimeout(id);
         return id;
     }
     setTimeout(id) {
         const info = this.map.get(id);
         if (!info)
             return;
-        clearTimeout(info.timeout);
+        if (info.timeout)
+            clearTimeout(info.timeout);
         info.timeout = setTimeout(() => {
             info.stream.end();
             this.map.delete(id);
+            this.emit("error", new Error("TIMEOUT"), info.info, id);
         }, 1000 * 60 * 5);
+        return info.timeout;
     }
 }
 exports.FileProcess = FileProcess;

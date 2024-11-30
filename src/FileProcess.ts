@@ -6,9 +6,9 @@ import { randomUUID } from "crypto";
 import EventEmitter from "events";
 
 interface EventMap {
-  end: [FileInfo];
-  error: [Error];
-  data: [{ chunk: Buffer; length: number; info: FileInfo }];
+  end: [FileInfo, id: string];
+  error: [Error, info: FileInfo, id: string];
+  data: [{ chunk: Buffer; length: number; info: FileInfo; id: string }];
 }
 export class FileProcess extends EventEmitter<EventMap> {
   private map = new Map<string, FileWriteInfo>();
@@ -23,12 +23,12 @@ export class FileProcess extends EventEmitter<EventMap> {
       info.stream.write(bufferChunk);
       info.length += bufferChunk.length;
 
-      this.emit("data", { chunk, length: info.length, info: info.info });
+      this.emit("data", { chunk, length: info.length, info: info.info, id });
 
       if (info.length >= info.info.size) {
-        this.emit("end", info.info);
+        this.emit("end", info.info, id);
         info.stream.end();
-        clearTimeout(info.timeout);
+        if (info.timeout) clearTimeout(info.timeout);
         this.map.delete(id);
       }
     }
@@ -38,11 +38,15 @@ export class FileProcess extends EventEmitter<EventMap> {
     const path = generateFilepath(info.path);
     const stream = createWriteStream(path);
     const id = randomUUID();
-    const timeout = setTimeout(() => {
-      stream.end();
-      this.map.delete(id);
-    }, 1000 * 60 * 5);
-    this.map.set(id, { stream, info, length: 0, path, timeout });
+    this.map.set(id, {
+      stream,
+      info,
+      length: 0,
+      path,
+      timeout: null,
+    });
+
+    this.setTimeout(id);
 
     return id;
   }
@@ -50,10 +54,13 @@ export class FileProcess extends EventEmitter<EventMap> {
   private setTimeout(id: string) {
     const info = this.map.get(id);
     if (!info) return;
-    clearTimeout(info.timeout);
+    if (info.timeout) clearTimeout(info.timeout);
     info.timeout = setTimeout(() => {
       info.stream.end();
       this.map.delete(id);
+      this.emit("error", new Error("TIMEOUT"), info.info, id);
     }, 1000 * 60 * 5);
+
+    return info.timeout;
   }
 }

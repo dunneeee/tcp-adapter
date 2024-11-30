@@ -2,12 +2,13 @@ import { Packet } from "./Packet";
 import { FileChunk, FileInfo } from "./types";
 import EventEmitter from "events";
 interface EventMap {
-    end: [FileInfo];
-    error: [Error];
+    end: [FileInfo, id: string];
+    error: [Error, info: FileInfo, id: string];
     data: [{
         chunk: Buffer;
         length: number;
         info: FileInfo;
+        id: string;
     }];
 }
 export declare class FileProcess extends EventEmitter<EventMap> {

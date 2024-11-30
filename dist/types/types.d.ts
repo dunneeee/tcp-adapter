@@ -14,7 +14,7 @@ export type FileWriteInfo = {
     stream: WriteStream;
     length: number;
     path: string;
-    timeout: NodeJS.Timeout;
+    timeout: NodeJS.Timeout | null;
 };
 export type FileChunk = {
     id: string;
