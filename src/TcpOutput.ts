@@ -133,7 +133,7 @@ export class TcpOutput {
         stream.resume();
       }
 
-      await this.send(new Packet({ id, chunk }, PacketTypeDefault.Data));
+      await this.send(new Packet({ id, chunk }, PacketTypeDefault.File));
     });
 
     return {

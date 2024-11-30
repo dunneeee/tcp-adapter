@@ -94,7 +94,7 @@ class TcpOutput {
             if (buffer.length <= resumePoint) {
                 stream.resume();
             }
-            yield this.send(new Packet_1.Packet({ id, chunk }, Packet_1.PacketTypeDefault.Data));
+            yield this.send(new Packet_1.Packet({ id, chunk }, Packet_1.PacketTypeDefault.File));
         }));
         return {
             loop,
