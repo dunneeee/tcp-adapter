@@ -21,7 +21,7 @@ export function isUUID(str: string): boolean {
 }
 
 export async function getFileInfo(filePath: string): Promise<FileInfo> {
-  const pathParts = filePath.split("/");
+  const pathParts = filePath.split(process.platform === "win32" ? "\\" : "/");
   const fileName = pathParts[pathParts.length - 1];
   const size = await fs.stat(filePath).then((stat) => stat.size);
   return {

@@ -39,7 +39,7 @@ function isUUID(str) {
 }
 function getFileInfo(filePath) {
     return __awaiter(this, void 0, void 0, function* () {
-        const pathParts = filePath.split("/");
+        const pathParts = filePath.split(process.platform === "win32" ? "\\" : "/");
         const fileName = pathParts[pathParts.length - 1];
         const size = yield promises_1.default.stat(filePath).then((stat) => stat.size);
         return {
