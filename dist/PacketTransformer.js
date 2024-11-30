@@ -3,18 +3,30 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PacketTransformer = void 0;
 const Packet_1 = require("./Packet");
 class PacketTransformer {
+    constructor() {
+        this.buffer = Buffer.alloc(0);
+    }
     decode(data) {
+        this.buffer = Buffer.concat([this.buffer, data]);
         const result = [];
-        while (data.length > 0) {
-            const packetLength = data.readUInt32BE(0);
-            const packetEvent = data.readUInt32BE(PacketTransformer.LENGTH_HEADER_SIZE);
-            const packetFeedBack = data.readUInt32BE(PacketTransformer.LENGTH_HEADER_SIZE +
+        while (this.buffer.length >= PacketTransformer.HEADER_SIZE) {
+            const packetLength = this.buffer.readUInt32BE(0);
+            if (this.buffer.length < packetLength) {
+                break;
+            }
+            const packetEvent = this.buffer.readUInt32BE(PacketTransformer.LENGTH_HEADER_SIZE);
+            const packetFeedBack = this.buffer.readUInt32BE(PacketTransformer.LENGTH_HEADER_SIZE +
                 PacketTransformer.EVENT_HEADER_SIZE);
-            const packetBody = data.subarray(PacketTransformer.HEADER_SIZE, packetLength);
-            const jsonParsedBody = JSON.parse(packetBody.toString());
-            const packet = new Packet_1.Packet(jsonParsedBody.data, packetEvent, jsonParsedBody.id).setFeedback(packetFeedBack === 1);
-            result.push(packet);
-            data = data.subarray(packetLength);
+            const packetBody = this.buffer.subarray(PacketTransformer.HEADER_SIZE, packetLength);
+            try {
+                const jsonParsedBody = JSON.parse(packetBody.toString());
+                const packet = new Packet_1.Packet(jsonParsedBody.data, packetEvent, jsonParsedBody.id).setFeedback(packetFeedBack === 1);
+                result.push(packet);
+            }
+            catch (error) {
+                console.error("Invalid packet:", error);
+            }
+            this.buffer = this.buffer.subarray(packetLength);
         }
         return result;
     }

@@ -5,40 +5,51 @@ export class PacketTransformer implements Transformer<Packet> {
   static LENGTH_HEADER_SIZE = 4;
   static EVENT_HEADER_SIZE = 4;
   static FEEDBACK_HEADER_SIZE = 4;
-
   static HEADER_SIZE =
     PacketTransformer.LENGTH_HEADER_SIZE +
     PacketTransformer.EVENT_HEADER_SIZE +
     PacketTransformer.FEEDBACK_HEADER_SIZE;
 
+  private buffer: Buffer = Buffer.alloc(0);
+
   decode<T = any>(data: Buffer): Packet<T | string>[] {
+    this.buffer = Buffer.concat([this.buffer, data]);
     const result: Packet<T | string>[] = [];
 
-    while (data.length > 0) {
-      const packetLength = data.readUInt32BE(0);
-      const packetEvent = data.readUInt32BE(
+    while (this.buffer.length >= PacketTransformer.HEADER_SIZE) {
+      const packetLength = this.buffer.readUInt32BE(0);
+
+      if (this.buffer.length < packetLength) {
+        break;
+      }
+
+      const packetEvent = this.buffer.readUInt32BE(
         PacketTransformer.LENGTH_HEADER_SIZE
       );
-      const packetFeedBack = data.readUInt32BE(
+      const packetFeedBack = this.buffer.readUInt32BE(
         PacketTransformer.LENGTH_HEADER_SIZE +
           PacketTransformer.EVENT_HEADER_SIZE
       );
-      const packetBody = data.subarray(
+
+      const packetBody = this.buffer.subarray(
         PacketTransformer.HEADER_SIZE,
         packetLength
       );
 
-      const jsonParsedBody = JSON.parse(packetBody.toString());
+      try {
+        const jsonParsedBody = JSON.parse(packetBody.toString());
+        const packet = new Packet(
+          jsonParsedBody.data,
+          packetEvent,
+          jsonParsedBody.id
+        ).setFeedback(packetFeedBack === 1);
 
-      const packet = new Packet(
-        jsonParsedBody.data,
-        packetEvent,
-        jsonParsedBody.id
-      ).setFeedback(packetFeedBack === 1);
+        result.push(packet);
+      } catch (error) {
+        console.error("Invalid packet:", error);
+      }
 
-      result.push(packet);
-
-      data = data.subarray(packetLength);
+      this.buffer = this.buffer.subarray(packetLength);
     }
 
     return result;
@@ -48,12 +59,15 @@ export class PacketTransformer implements Transformer<Packet> {
     const lengthHeader = Buffer.alloc(PacketTransformer.LENGTH_HEADER_SIZE);
     const eventHeader = Buffer.alloc(PacketTransformer.EVENT_HEADER_SIZE);
     const feedBackHeader = Buffer.alloc(PacketTransformer.FEEDBACK_HEADER_SIZE);
+
     const isFeedback = data.isFeedback ? 1 : 0;
     const body = data.toBuffer();
+
     eventHeader.writeUInt32BE(
       typeof data.type === "number" ? data.type : PacketTypeDefault.Data,
       0
     );
+
     lengthHeader.writeUInt32BE(
       lengthHeader.length +
         eventHeader.length +
@@ -61,7 +75,9 @@ export class PacketTransformer implements Transformer<Packet> {
         feedBackHeader.length,
       0
     );
+
     feedBackHeader.writeUInt32BE(isFeedback, 0);
+
     return Buffer.concat([lengthHeader, eventHeader, feedBackHeader, body]);
   }
 }

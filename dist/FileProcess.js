@@ -31,6 +31,10 @@ class FileProcess {
                 const filePath = (0, utils_1.generateFilepath)(path_1.default.resolve(this.config.rootFolder, packet.data.name));
                 (0, utils_1.createFileIfNotExists)(filePath);
                 const writeStream = (0, fs_1.createWriteStream)(filePath);
+                adapter.once("disconnect", () => {
+                    writeStream.close();
+                    this.map.delete(id);
+                });
                 this.map.set(id, {
                     info: packet.data,
                     writeStream,

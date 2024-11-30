@@ -35,6 +35,11 @@ export class FileProcess {
 
       const writeStream = createWriteStream(filePath);
 
+      adapter.once("disconnect", () => {
+        writeStream.close();
+        this.map.delete(id);
+      });
+
       this.map.set(id, {
         info: packet.data,
         writeStream,
