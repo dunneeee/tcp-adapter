@@ -1,89 +1,48 @@
-import { createWriteStream, existsSync, WriteStream } from "fs";
+import { createWriteStream } from "fs";
 import { Packet } from "./Packet";
-import { FileInfo } from "./types";
-import { createFileIfNotExists, generateFilepath, isFileInfo } from "./utils";
-import { TcpAdapter } from "./TcpAdapter";
-import path from "path";
-import { ACK } from "./constants";
+import { FileChunk, FileInfo, FileWriteInfo } from "./types";
+import { generateFilepath, isFileChunk, isFileInfo } from "./utils";
+import { randomUUID } from "crypto";
+import EventEmitter from "events";
 
-interface FileMapValue {
-  info: FileInfo;
-  writeStream: WriteStream;
-  timeout?: NodeJS.Timeout;
+interface EventMap {
+  end: [FileInfo];
+  error: [Error];
+  data: [{ chunk: Buffer; length: number; info: FileInfo }];
 }
+export class FileProcess extends EventEmitter<EventMap> {
+  private map = new Map<string, FileWriteInfo>();
 
-export interface FileProcessConfig {
-  rootFolder: string;
-  timeout?: number;
-}
+  async process(packet: Packet<FileChunk>) {
+    if (isFileChunk(packet.data)) {
+      const { chunk, id } = packet.data;
+      const info = this.map.get(id);
+      if (!info || !chunk) return;
+      const bufferChunk = Buffer.from(chunk);
+      info.stream.write(bufferChunk);
+      info.length += bufferChunk.length;
 
-export class FileProcess {
-  private map = new Map<string, FileMapValue>();
+      this.emit("data", { chunk, length: info.length, info: info.info });
 
-  constructor(public config: FileProcessConfig) {}
-
-  async process(packet: Packet, adapter: TcpAdapter) {
-    const id = packet.id;
-
-    if (!this.map.has(id)) {
-      if (!isFileInfo(packet.data)) throw new Error("INVALID_DATA");
-      const filePath = generateFilepath(
-        path.resolve(this.config.rootFolder, packet.data.name)
-      );
-
-      createFileIfNotExists(filePath);
-
-      const writeStream = createWriteStream(filePath);
-
-      adapter.once("disconnect", () => {
-        writeStream.close();
+      if (info.length >= info.info.size) {
+        this.emit("end", info.info);
+        info.stream.end();
+        clearTimeout(info.timeout);
         this.map.delete(id);
-      });
-
-      this.map.set(id, {
-        info: packet.data,
-        writeStream,
-      });
-
-      this.createTimeout(id);
-      return packet.newOutput(adapter).response(id);
+      }
     }
-
-    const handler = this.map.get(id);
-
-    if (!handler) throw new Error("NOT_FOUND");
-    this.clearTimeout(id);
-    if (!packet.data) {
-      handler.writeStream.end();
-      this.map.delete(id);
-      return packet.newOutput(adapter).response(ACK);
-    }
-
-    handler.writeStream.write(Buffer.from(packet.data));
-    this.createTimeout(id);
-    return packet.newOutput(adapter).response(ACK);
   }
 
-  private createTimeout(id: string) {
-    const handler = this.map.get(id);
-    if (!handler || !this.config.timeout) return;
-    if (handler.timeout) {
-      clearTimeout(handler.timeout);
-    }
-    handler.timeout = setTimeout(() => {
+  createStream(info: FileInfo) {
+    const path = generateFilepath(info.path);
+    const stream = createWriteStream(path);
+    const id = randomUUID();
+    const timeout = setTimeout(() => {
+      stream.end();
       this.map.delete(id);
-      handler.writeStream.close();
-    }, this.config.timeout);
+    }, 1000 * 60 * 5);
+    this.map.set(id, { stream, info, length: 0, path, timeout });
 
-    this.map.set(id, handler);
-    return handler.timeout;
-  }
-
-  private clearTimeout(id: string) {
-    const handler = this.map.get(id);
-    if (!handler) return;
-    clearTimeout(handler.timeout!);
-    handler.timeout = undefined;
-    this.map.set(id, handler);
+    return id;
   }
 }

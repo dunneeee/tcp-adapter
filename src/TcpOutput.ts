@@ -1,6 +1,7 @@
-import { ReadStream } from "fs";
 import { Packet, PacketTypeDefault } from "./Packet";
+import { PauseableLoop } from "./PauseableLoop";
 import { TcpAdapter } from "./TcpAdapter";
+import { createReadStream, ReadStream } from "fs";
 
 export class TcpOutput {
   constructor(private adapter: TcpAdapter) {}
@@ -86,29 +87,48 @@ export class TcpOutput {
     });
   }
 
-  async stream(id: string, stream: ReadStream): Promise<void> {
-    return new Promise((resolve, reject) => {
-      stream.on("data", (chunk) => {
+  stream(id: string, path: string, chunkSize = 1024 * 32) {
+    const pausePoint = chunkSize * 160;
+    const stream = createReadStream(path, { highWaterMark: chunkSize });
+    let buffer: Buffer = Buffer.from([]);
+    let length = 0;
+    stream.on("data", (chunk) => {
+      if (buffer.length >= pausePoint) {
         stream.pause();
-        const packet = new Packet(chunk, PacketTypeDefault.File);
-        this.request(packet, id)
-          .then(() => {
-            stream.resume();
-          })
-          .catch((e) => {
-            reject(e);
-            stream.close();
-          });
-      });
-
-      stream.on("end", () => {
-        const packet = new Packet(null, PacketTypeDefault.File);
-        this.request(packet, id)
-          .then(() => {
-            resolve();
-          })
-          .catch(reject);
-      });
+      }
+      buffer = Buffer.concat([buffer, Buffer.from(chunk)]);
     });
+
+    const loop = new PauseableLoop(async () => {
+      if (
+        (stream.destroyed && buffer.length === 0) ||
+        this.adapter.getSocket().destroyed
+      ) {
+        console.log("DESTROYED");
+        loop.cancel();
+        return;
+      }
+      if (buffer.length === 0) {
+        stream.resume();
+        return;
+      }
+
+      const chunk = buffer.subarray(0, chunkSize);
+      buffer = buffer.subarray(chunkSize);
+
+      length += chunk.length;
+
+      if (buffer.length <= pausePoint) {
+        stream.resume();
+      }
+
+      this.send(new Packet({ id, chunk }, PacketTypeDefault.File));
+    }, 1000);
+
+    return {
+      stream,
+      loop,
+      getLength: () => length,
+    };
   }
 }

@@ -9,5 +9,6 @@ export * from "./PacketOutput";
 export * from "./typeUtils";
 export * from "./utils";
 export * from "./DataResolver";
-export * from "./FileProcess";
 export * from "./types";
+export * from "./PauseableLoop";
+export * from "./FileProcess";

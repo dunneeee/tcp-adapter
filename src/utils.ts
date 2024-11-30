@@ -1,6 +1,6 @@
 import { existsSync } from "fs";
 import { Packet, PacketTypeDefault } from "./Packet";
-import { FileInfo } from "./types";
+import { FileChunk, FileInfo } from "./types";
 import fs from "fs/promises";
 import { dirname } from "path";
 
@@ -44,6 +44,10 @@ export function isFileInfo(data: any): data is FileInfo {
 
 export function isFilePacket(packet: Packet) {
   return packet.type === PacketTypeDefault.File;
+}
+
+export function isFileChunk(data: any): data is FileChunk {
+  return typeof data === "object" && "chunk" in data && "id" in data;
 }
 
 export function generateFilepath(path: string): string {

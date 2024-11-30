@@ -3,4 +3,4 @@ package-lock.json
 *.test.ts
 .vscode
 *.tgz
-temp/
+temps/
