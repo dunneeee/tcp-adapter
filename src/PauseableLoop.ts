@@ -53,7 +53,7 @@ export class PauseableLoop extends EventEmitter<EventMap> {
   }
 
   private loop() {
-    if (this.isCancelled || !this.isRunning) return;
+    if (this.isCancelled) return;
     this.emit("loop");
     this.timeout = setImmediate(() => {
       if (this.isPaused) return;

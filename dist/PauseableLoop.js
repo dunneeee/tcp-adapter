@@ -47,7 +47,7 @@ class PauseableLoop extends events_1.default {
         this.stop();
     }
     loop() {
-        if (this.isCancelled || !this.isRunning)
+        if (this.isCancelled)
             return;
         this.emit("loop");
         this.timeout = setImmediate(() => {
