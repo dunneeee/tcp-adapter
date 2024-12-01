@@ -38,6 +38,7 @@ export class FileProcess extends EventEmitter<EventMap> {
     const path = generateFilepath(info.path);
     const stream = createWriteStream(path);
     const id = randomUUID();
+    info.path = path;
     this.map.set(id, {
       stream,
       info,

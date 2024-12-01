@@ -48,6 +48,7 @@ class FileProcess extends events_1.default {
         const path = (0, utils_1.generateFilepath)(info.path);
         const stream = (0, fs_1.createWriteStream)(path);
         const id = (0, crypto_1.randomUUID)();
+        info.path = path;
         this.map.set(id, {
             stream,
             info,
