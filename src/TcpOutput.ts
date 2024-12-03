@@ -93,7 +93,7 @@ export class TcpOutput {
     });
   }
 
-  stream(id: number, filePath: string) {
+  stream(id: number, filePath: string, type: number = PacketTypeDefault.File) {
     let buffer = Buffer.alloc(0);
     let length = 0;
 
@@ -133,7 +133,7 @@ export class TcpOutput {
         stream.resume();
       }
 
-      await this.send(new Packet({ id, chunk }, PacketTypeDefault.File));
+      await this.send(new Packet({ id, chunk }, type));
     });
 
     return {

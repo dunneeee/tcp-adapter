@@ -64,7 +64,7 @@ class TcpOutput {
             });
         });
     }
-    stream(id, filePath) {
+    stream(id, filePath, type = Packet_1.PacketTypeDefault.File) {
         let buffer = Buffer.alloc(0);
         let length = 0;
         const stream = (0, fs_1.createReadStream)(filePath, {
@@ -94,7 +94,7 @@ class TcpOutput {
             if (buffer.length <= resumePoint) {
                 stream.resume();
             }
-            yield this.send(new Packet_1.Packet({ id, chunk }, Packet_1.PacketTypeDefault.File));
+            yield this.send(new Packet_1.Packet({ id, chunk }, type));
         }));
         return {
             loop,
