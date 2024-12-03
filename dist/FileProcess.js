@@ -59,6 +59,15 @@ class FileProcess extends events_1.default {
         this.setTimeout(id);
         return id;
     }
+    cleanStream(id) {
+        const info = this.map.get(id);
+        if (!info)
+            return;
+        info.stream.end();
+        if (info.timeout)
+            clearTimeout(info.timeout);
+        this.map.delete(id);
+    }
     setTimeout(id) {
         const info = this.map.get(id);
         if (!info)

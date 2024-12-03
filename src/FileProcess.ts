@@ -52,6 +52,14 @@ export class FileProcess extends EventEmitter<EventMap> {
     return id;
   }
 
+  cleanStream(id: string) {
+    const info = this.map.get(id);
+    if (!info) return;
+    info.stream.end();
+    if (info.timeout) clearTimeout(info.timeout);
+    this.map.delete(id);
+  }
+
   private setTimeout(id: string) {
     const info = this.map.get(id);
     if (!info) return;
