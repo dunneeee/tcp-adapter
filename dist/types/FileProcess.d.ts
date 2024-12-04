@@ -13,7 +13,9 @@ interface EventMap {
 }
 export declare class FileProcess extends EventEmitter<EventMap> {
     private map;
+    private queue;
     process(packet: Packet<FileChunk>): Promise<void>;
+    private processQueue;
     createStream(info: FileInfo): string;
     createStream(info: FileInfo, id: string): string;
     getStream(id: string): import("fs").WriteStream | undefined;

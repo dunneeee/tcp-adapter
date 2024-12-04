@@ -27,7 +27,10 @@ export class FileProcess extends EventEmitter<EventMap> {
       const info = this.map.get(id);
       if (!info || !chunk) return;
       const bufferChunk = Buffer.from(chunk);
-      info.stream.write(bufferChunk);
+      if (!info.stream.write(bufferChunk)) {
+        await new Promise((resolve) => info.stream.once("drain", resolve));
+      }
+
       info.length += bufferChunk.length;
 
       this.emit("data", { chunk, length: info.length, info: info.info, id });

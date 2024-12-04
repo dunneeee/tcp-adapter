@@ -17,21 +17,31 @@ const fs_1 = require("fs");
 const utils_1 = require("./utils");
 const crypto_1 = require("crypto");
 const events_1 = __importDefault(require("events"));
+const Queue_1 = require("./Queue");
 class FileProcess extends events_1.default {
     constructor() {
         super(...arguments);
         this.map = new Map();
+        this.queue = new Queue_1.Queue(this.processQueue.bind(this));
     }
     process(packet) {
         return __awaiter(this, void 0, void 0, function* () {
+            this.queue.add(packet);
+        });
+    }
+    processQueue(packet) {
+        return __awaiter(this, void 0, void 0, function* () {
             if ((0, utils_1.isFileChunk)(packet.data)) {
+                console.log("Processing", packet);
                 const { chunk, id } = packet.data;
                 this.setTimeout(id);
                 const info = this.map.get(id);
                 if (!info || !chunk)
                     return;
                 const bufferChunk = Buffer.from(chunk);
-                info.stream.write(bufferChunk);
+                if (!info.stream.write(bufferChunk)) {
+                    yield new Promise((resolve) => info.stream.once("drain", resolve));
+                }
                 info.length += bufferChunk.length;
                 this.emit("data", { chunk, length: info.length, info: info.info, id });
                 if (info.length >= info.info.size) {
@@ -57,7 +67,7 @@ class FileProcess extends events_1.default {
             timeout: null,
         });
         this.setTimeout(currentId);
-        return id;
+        return currentId;
     }
     getStream(id) {
         const info = this.map.get(id);
