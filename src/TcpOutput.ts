@@ -93,7 +93,7 @@ export class TcpOutput {
     });
   }
 
-  stream(id: number, filePath: string, type: number = PacketTypeDefault.File) {
+  stream(id: string, filePath: string, type: number = PacketTypeDefault.File) {
     let buffer = Buffer.alloc(0);
     let length = 0;
 

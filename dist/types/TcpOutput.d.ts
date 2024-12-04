@@ -14,7 +14,7 @@ export declare class TcpOutput {
     request<R = any, T = any>(data: T): Promise<R>;
     requestWithTimeout<R = any, T = any>(data: T, type: number, timeout: number | null): Promise<R>;
     requestWithTimeout<R = any, T = any>(packet: Packet<T>, timeout: number | null): Promise<R>;
-    stream(id: number, filePath: string, type?: number): {
+    stream(id: string, filePath: string, type?: number): {
         loop: PauseableLoop;
         getLength: () => number;
     };
