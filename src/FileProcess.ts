@@ -4,6 +4,7 @@ import { FileChunk, FileInfo, FileWriteInfo } from "./types";
 import { generateFilepath, isFileChunk, isFileInfo } from "./utils";
 import { randomUUID } from "crypto";
 import EventEmitter from "events";
+import { Queue } from "./Queue";
 
 interface EventMap {
   end: [FileInfo, id: string];
@@ -12,9 +13,15 @@ interface EventMap {
 }
 export class FileProcess extends EventEmitter<EventMap> {
   private map = new Map<string, FileWriteInfo>();
+  private queue = new Queue<Packet<FileChunk>>(this.processQueue.bind(this));
 
   async process(packet: Packet<FileChunk>) {
+    this.queue.add(packet);
+  }
+
+  private async processQueue(packet: Packet<FileChunk>) {
     if (isFileChunk(packet.data)) {
+      console.log("Processing", packet);
       const { chunk, id } = packet.data;
       this.setTimeout(id);
       const info = this.map.get(id);
@@ -33,6 +40,7 @@ export class FileProcess extends EventEmitter<EventMap> {
       }
     }
   }
+
   createStream(info: FileInfo): string;
   createStream(info: FileInfo, id: string): string;
   createStream(info: FileInfo, id?: string) {
@@ -50,7 +58,7 @@ export class FileProcess extends EventEmitter<EventMap> {
 
     this.setTimeout(currentId);
 
-    return id;
+    return currentId;
   }
 
   getStream(id: string) {
