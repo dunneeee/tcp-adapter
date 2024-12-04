@@ -33,13 +33,14 @@ export class FileProcess extends EventEmitter<EventMap> {
       }
     }
   }
-
-  createStream(info: FileInfo) {
+  createStream(info: FileInfo): string;
+  createStream(info: FileInfo, id: string): string;
+  createStream(info: FileInfo, id?: string) {
     const path = generateFilepath(info.path);
     const stream = createWriteStream(path);
-    const id = randomUUID();
+    const currentId = id || randomUUID();
     info.path = path;
-    this.map.set(id, {
+    this.map.set(currentId, {
       stream,
       info,
       length: 0,
@@ -47,9 +48,18 @@ export class FileProcess extends EventEmitter<EventMap> {
       timeout: null,
     });
 
-    this.setTimeout(id);
+    this.setTimeout(currentId);
 
     return id;
+  }
+
+  getStream(id: string) {
+    const info = this.map.get(id);
+    return info?.stream;
+  }
+
+  getWriterInfo(id: string) {
+    return this.map.get(id)?.info;
   }
 
   cleanStream(id: string) {

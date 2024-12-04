@@ -44,20 +44,28 @@ class FileProcess extends events_1.default {
             }
         });
     }
-    createStream(info) {
+    createStream(info, id) {
         const path = (0, utils_1.generateFilepath)(info.path);
         const stream = (0, fs_1.createWriteStream)(path);
-        const id = (0, crypto_1.randomUUID)();
+        const currentId = id || (0, crypto_1.randomUUID)();
         info.path = path;
-        this.map.set(id, {
+        this.map.set(currentId, {
             stream,
             info,
             length: 0,
             path,
             timeout: null,
         });
-        this.setTimeout(id);
+        this.setTimeout(currentId);
         return id;
+    }
+    getStream(id) {
+        const info = this.map.get(id);
+        return info === null || info === void 0 ? void 0 : info.stream;
+    }
+    getWriterInfo(id) {
+        var _a;
+        return (_a = this.map.get(id)) === null || _a === void 0 ? void 0 : _a.info;
     }
     cleanStream(id) {
         const info = this.map.get(id);
