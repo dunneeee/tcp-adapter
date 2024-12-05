@@ -45,9 +45,17 @@ export class FileProcess extends EventEmitter<EventMap> {
   }
 
   createStream(info: FileInfo): string;
+  createStream(info: FileInfo, replace: boolean): string;
   createStream(info: FileInfo, id: string): string;
-  createStream(info: FileInfo, id?: string) {
-    const path = generateFilepath(info.path);
+  createStream(info: FileInfo, id: string, replace: boolean): string;
+  createStream(
+    info: FileInfo,
+    idOrReplace?: string | boolean,
+    replace?: boolean
+  ) {
+    const id = typeof idOrReplace === "string" ? idOrReplace : undefined;
+
+    const path = replace ? info.path : generateFilepath(info.path);
     const stream = createWriteStream(path);
     const currentId = id || randomUUID();
     info.path = path;
